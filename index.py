@@ -1,36 +1,32 @@
 import vllm
 import gradio as gr
-from vllm.models import Llama2ChatModel
+from vllm.chat import Llama2ChatModel
+from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# Load the model
-model = Llama2ChatModel.from_pretrained("llama-2-chat")
+tokenizer = AutoTokenizer.from_pretrained("meta-llama/Llama-2-70b-chat-hf")
+model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-70b-chat-hf")
 
-# Create a vllm instance with a different name and a lower max length
+model = Llama2ChatModel(model, tokenizer)
+
 vllm_instance = vllm.VLLM(model, decoding_algorithm="top_p_sampling", top_p=0.8, max_length=50)
 
-# Initialize an empty chat history
 chat_history = []
 
-def chatbot(message):
-  # Use a try-except block to catch and handle any errors
-  try:
-    # Pass the message and the chat history to vllm
-    response, chat_history = vllm_instance.generate(message, chat_history)
-    # Return the response
-    return response
-  except Exception as e:
-    # Print or log the error message
-    print(e)
-    # Return a generic error message to the user
-    return "Sorry, something went wrong. Please try again later."
 
-# Create a gradio interface
+def chatbot(message):
+    try:
+        response, chat_history = vllm_instance.generate(message, chat_history)
+        return response
+    except Exception as e:
+        print(e)
+        return "Sorry, something went wrong. Please try again later."
+
+
 ui = gr.ChatInterface(
-  fn=chatbot,
-  title="Llama 2 Chatbot",
-  description="A simple chat interface powered by llama 2 and vllm.",
-  examples=["Hi", "What is your name?", "Tell me a joke."]
+    fn=chatbot,
+    title="Llama 2 Chatbot",
+    description="A simple chat interface powered by llama 2 and vllm.",
+    examples=["Hi", "What is your name?", "Tell me a joke."]
 )
 
-# Launch the interface
 ui.launch()
